@@ -21,7 +21,7 @@ export async function GET() {
   logs.sort(
     (a, b) =>
       b.date.localeCompare(a.date) ||
-      new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
+      (b.createdAt ? new Date(b.createdAt).getTime() : 0) - (a.createdAt ? new Date(a.createdAt).getTime() : 0)
   );
   return NextResponse.json(logs);
 }

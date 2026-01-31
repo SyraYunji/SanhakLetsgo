@@ -6,7 +6,6 @@ import { useState } from "react";
 export function PaperAddForm({ onDone }: { onDone?: () => void } = {}) {
   const router = useRouter();
   const [title, setTitle] = useState("");
-  const [url, setUrl] = useState("");
   const [tagsStr, setTagsStr] = useState("");
   const [readAt, setReadAt] = useState(() => new Date().toISOString().slice(0, 10));
   const [mySummary, setMySummary] = useState("");
@@ -23,7 +22,6 @@ export function PaperAddForm({ onDone }: { onDone?: () => void } = {}) {
       if (hasFile) {
         const formData = new FormData();
         formData.set("title", title.trim());
-        if (url.trim()) formData.set("url", url.trim());
         formData.set("tags", tagsStr);
         formData.set("readAt", readAt);
         if (mySummary.trim()) formData.set("mySummary", mySummary.trim());
@@ -48,7 +46,6 @@ export function PaperAddForm({ onDone }: { onDone?: () => void } = {}) {
           credentials: "include",
           body: JSON.stringify({
             title: title.trim(),
-            url: url.trim() || undefined,
             tags: tagsStr.split(",").map((t) => t.trim()).filter(Boolean),
             readAt,
             mySummary: mySummary.trim() || undefined,
@@ -90,7 +87,7 @@ export function PaperAddForm({ onDone }: { onDone?: () => void } = {}) {
             type="file"
             accept=".pdf,application/pdf"
             onChange={(e) => setPdfFile(e.target.files?.[0] ?? null)}
-            className="w-full rounded-md border border-[hsl(var(--border))] bg-[hsl(var(--background))] px-3 py-2 text-sm file:mr-2 file:rounded file:border-0 file:bg-[hsl(var(--primary))] file:px-3 file:py-1 file:text-sm file:text-[hsl(var(--primary-foreground))]"
+            className="block w-full rounded-md border border-[hsl(var(--border))] bg-[hsl(var(--background))] px-3 py-2 text-sm file:ml-0 file:mr-3 file:mt-0 file:inline-flex file:h-8 file:items-center file:justify-center file:rounded-md file:border-0 file:bg-[hsl(var(--primary))] file:px-3 file:py-0 file:text-sm file:font-medium file:text-[hsl(var(--primary-foreground))] file:cursor-pointer"
           />
           <p className="text-xs text-[hsl(var(--muted-foreground))] mt-1">PDF 파일을 올리면 저장 시 함께 저장됩니다.</p>
         </div>
@@ -101,16 +98,6 @@ export function PaperAddForm({ onDone }: { onDone?: () => void } = {}) {
             onChange={(e) => setMySummary(e.target.value)}
             rows={6}
             placeholder="논문 요약, 핵심 내용, 메모 등을 자유롭게 적어주세요"
-            className="w-full rounded-md border border-[hsl(var(--border))] bg-[hsl(var(--background))] px-3 py-2 text-sm"
-          />
-        </div>
-        <div>
-          <label className="block text-sm font-medium mb-1">링크 (arXiv/DOI/URL)</label>
-          <input
-            type="url"
-            value={url}
-            onChange={(e) => setUrl(e.target.value)}
-            placeholder="https://..."
             className="w-full rounded-md border border-[hsl(var(--border))] bg-[hsl(var(--background))] px-3 py-2 text-sm"
           />
         </div>
