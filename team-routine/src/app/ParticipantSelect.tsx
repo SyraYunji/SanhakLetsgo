@@ -17,6 +17,7 @@ export function ParticipantSelect() {
       const res = await fetch("/api/session/select", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
+        credentials: "include",
         body: JSON.stringify({ name }),
       });
       const data = await res.json().catch(() => ({}));
@@ -24,18 +25,37 @@ export function ParticipantSelect() {
         router.push("/dashboard");
         router.refresh();
       } else {
-        setError(data.error ?? "선택에 실패했습니다");
+        const msg = typeof data?.error === "string" ? data.error : "선택에 실패했습니다";
+        setError(msg);
       }
     } catch {
-      setError("연결에 실패했습니다");
+      setError("연결에 실패했습니다. 서버가 켜져 있는지 확인하세요.");
     } finally {
       setBusy(false);
     }
   };
 
+  const goBack = () => {
+    if (typeof window !== "undefined" && window.history.length > 1) {
+      router.back();
+    } else {
+      router.push("/");
+    }
+  };
+
   return (
-    <div className="w-full max-w-sm rounded-xl border bg-[hsl(var(--background))] p-6 shadow-sm">
-      <h1 className="text-xl font-semibold text-center mb-6">참여자 선택</h1>
+    <div className="w-full max-w-sm rounded-xl border border-[hsl(var(--border))] bg-[hsl(var(--muted))] p-6 shadow-sm">
+      <div className="flex items-center justify-between mb-6">
+        <button
+          type="button"
+          onClick={goBack}
+          className="text-sm text-[hsl(var(--muted-foreground))] hover:text-[hsl(var(--foreground))] flex items-center gap-1"
+        >
+          ← 뒤로가기
+        </button>
+        <span className="flex-1" />
+      </div>
+      <h1 className="text-xl font-semibold text-center mb-2">참여자 선택</h1>
       <p className="text-sm text-[hsl(var(--muted-foreground))] text-center mb-4">
         나는 누구인가요?
       </p>

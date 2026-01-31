@@ -5,7 +5,7 @@ import { prisma } from "@/lib/prisma";
 export async function GET() {
   const participantId = await getParticipantId();
   if (!participantId) {
-    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    return NextResponse.json({ error: "참여자를 선택해 주세요." }, { status: 401 });
   }
   const today = new Date();
   const from = new Date(today);
@@ -17,7 +17,11 @@ export async function GET() {
       userId: participantId,
       date: { gte: fromStr, lte: toStr },
     },
-    orderBy: { date: "desc" },
   });
+  logs.sort(
+    (a, b) =>
+      b.date.localeCompare(a.date) ||
+      new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
+  );
   return NextResponse.json(logs);
 }

@@ -9,6 +9,7 @@ type Paper = {
   tags: string[];
   readAt: string;
   review: { id: string } | null;
+  user?: { name: string | null };
 };
 
 export function PapersList({ papers }: { papers: Paper[] }) {
@@ -18,6 +19,7 @@ export function PapersList({ papers }: { papers: Paper[] }) {
         <table className="w-full text-sm">
           <thead>
             <tr className="border-b border-[hsl(var(--border))] bg-[hsl(var(--muted))]">
+              <th className="text-left p-3 font-medium">참여자</th>
               <th className="text-left p-3 font-medium">제목</th>
               <th className="text-left p-3 font-medium hidden sm:table-cell">링크</th>
               <th className="text-left p-3 font-medium">태그</th>
@@ -28,7 +30,7 @@ export function PapersList({ papers }: { papers: Paper[] }) {
           <tbody>
             {papers.length === 0 ? (
               <tr>
-                <td colSpan={5} className="p-6 text-center text-[hsl(var(--muted-foreground))]">
+                <td colSpan={6} className="p-6 text-center text-[hsl(var(--muted-foreground))]">
                   등록된 논문이 없습니다.
                 </td>
               </tr>
@@ -38,6 +40,7 @@ export function PapersList({ papers }: { papers: Paper[] }) {
                   key={p.id}
                   className="border-b border-[hsl(var(--border))] hover:bg-[hsl(var(--muted))]"
                 >
+                  <td className="p-3">{p.user?.name ?? "—"}</td>
                   <td className="p-3">
                     <Link href={`/papers/${p.id}`} className="font-medium hover:underline">
                       {p.title}

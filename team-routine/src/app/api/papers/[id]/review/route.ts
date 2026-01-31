@@ -9,7 +9,7 @@ export async function GET(
 ) {
   const participantId = await getParticipantId();
   if (!participantId) {
-    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    return NextResponse.json({ error: "참여자를 선택해 주세요." }, { status: 401 });
   }
   const { id } = await params;
   const paper = await prisma.paper.findFirst({
@@ -28,7 +28,7 @@ export async function PUT(
 ) {
   const participantId = await getParticipantId();
   if (!participantId) {
-    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    return NextResponse.json({ error: "참여자를 선택해 주세요." }, { status: 401 });
   }
   const { id } = await params;
   try {

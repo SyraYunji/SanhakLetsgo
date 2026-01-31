@@ -14,14 +14,13 @@ export default async function PapersPage({
   const params = await searchParams;
   const showAdd = params.add === "1";
   const papers = await prisma.paper.findMany({
-    where: { userId: participantId },
-    include: { review: true },
+    include: { review: true, user: { select: { name: true } } },
     orderBy: { readAt: "desc" },
   });
   return (
     <div className="space-y-4">
       <div className="flex items-center justify-between">
-        <h1 className="text-lg font-semibold">내가 읽은 논문</h1>
+        <h1 className="text-lg font-semibold">논문 스터디 (모든 참여자)</h1>
         {!showAdd && (
           <Link
             href="/papers?add=1"
@@ -31,7 +30,7 @@ export default async function PapersPage({
           </Link>
         )}
       </div>
-      {showAdd && <PaperAddForm onDone={() => {}} />}
+      {showAdd && <PaperAddForm />}
       <PapersList papers={papers} />
     </div>
   );

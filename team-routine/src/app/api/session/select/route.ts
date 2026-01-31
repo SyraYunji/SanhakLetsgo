@@ -11,10 +11,10 @@ const ALLOWED_NAMES = ["신현호", "창민석", "송수현", "강태영", "이�
 
 export async function POST(req: Request) {
   try {
-    const body = await req.json();
+    const body = await req.json().catch(() => ({}));
     const parsed = bodySchema.safeParse(body);
     if (!parsed.success) {
-      return NextResponse.json({ error: "Invalid" }, { status: 400 });
+      return NextResponse.json({ error: "이름을 선택해 주세요." }, { status: 400 });
     }
     const name = parsed.data.name.trim();
     if (!ALLOWED_NAMES.includes(name)) {
@@ -22,15 +22,27 @@ export async function POST(req: Request) {
     }
     let user = await prisma.user.findFirst({ where: { name } });
     if (!user) {
-      user = await prisma.user.create({ data: { name } });
+      try {
+        user = await prisma.user.create({ data: { name } });
+      } catch (createErr) {
+        console.error(createErr);
+        user = await prisma.user.findFirst({ where: { name } });
+        if (!user) {
+          return NextResponse.json(
+            { error: "참여자 생성에 실패했습니다. DB 연결을 확인하세요." },
+            { status: 500 }
+          );
+        }
+      }
     }
     const res = NextResponse.json({ ok: true });
-    Object.entries(participantCookieHeader(user.id)).forEach(([key, value]) => {
+    for (const [key, value] of Object.entries(participantCookieHeader(user.id))) {
       res.headers.append(key, value);
-    });
+    }
     return res;
   } catch (e) {
     console.error(e);
-    return NextResponse.json({ error: "실패" }, { status: 500 });
+    const message = e instanceof Error ? e.message : "선택 처리 중 오류가 났습니다.";
+    return NextResponse.json({ error: message }, { status: 500 });
   }
 }

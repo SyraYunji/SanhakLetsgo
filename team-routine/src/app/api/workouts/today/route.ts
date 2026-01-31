@@ -9,12 +9,11 @@ function todayStr() {
 export async function GET() {
   const participantId = await getParticipantId();
   if (!participantId) {
-    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    return NextResponse.json({ error: "참여자를 선택해 주세요." }, { status: 401 });
   }
-  const log = await prisma.workoutLog.findUnique({
-    where: {
-      userId_date: { userId: participantId, date: todayStr() },
-    },
+  const sessions = await prisma.workoutLog.findMany({
+    where: { userId: participantId, date: todayStr() },
   });
-  return NextResponse.json(log ?? null);
+  sessions.sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
+  return NextResponse.json(sessions);
 }

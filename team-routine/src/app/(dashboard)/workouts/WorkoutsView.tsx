@@ -17,17 +17,21 @@ function calcDuration(start: string | null, end: string | null): string {
 
 type Log = {
   id: string;
+  userId: string;
   date: string;
   attended: boolean;
   startTime: string | null;
   endTime: string | null;
+  user?: { name: string | null };
 };
 
 export function WorkoutsView({
-  todayLog,
+  currentParticipantId,
+  todaySessions,
   logs,
 }: {
-  todayLog: Log | null;
+  currentParticipantId: string;
+  todaySessions: Log[];
   logs: Log[];
 }) {
   const router = useRouter();
@@ -37,7 +41,10 @@ export function WorkoutsView({
   const [editStart, setEditStart] = useState("");
   const [editEnd, setEditEnd] = useState("");
 
+  const hasActiveSession = todaySessions.some((s) => s.startTime && !s.endTime);
+
   const openEdit = (log: Log) => {
+    if (log.userId !== currentParticipantId) return;
     setEditModal(log);
     setEditAttended(log.attended);
     setEditStart(log.startTime ?? "");
@@ -48,9 +55,10 @@ export function WorkoutsView({
     if (!editModal) return;
     setBusy(true);
     try {
-      const res = await fetch(`/api/workouts/${editModal.date}`, {
+      const res = await fetch(`/api/workouts/log/${editModal.id}`, {
         method: "PATCH",
         headers: { "Content-Type": "application/json" },
+        credentials: "include",
         body: JSON.stringify({
           attended: editAttended,
           startTime: editStart.trim() || null,
@@ -70,13 +78,14 @@ export function WorkoutsView({
   };
 
   const toggleTodayAttendance = async () => {
-    if (!todayLog) return;
+    const currentAttended = todaySessions[0]?.attended ?? false;
     setBusy(true);
     try {
       await fetch("/api/workouts/attendance", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ attended: !todayLog.attended }),
+        credentials: "include",
+        body: JSON.stringify({ attended: !currentAttended }),
       });
       router.refresh();
     } finally {
@@ -90,6 +99,7 @@ export function WorkoutsView({
       await fetch("/api/workouts/start", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
+        credentials: "include",
         body: JSON.stringify({}),
       });
       router.refresh();
@@ -104,6 +114,7 @@ export function WorkoutsView({
       await fetch("/api/workouts/end", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
+        credentials: "include",
         body: JSON.stringify({}),
       });
       router.refresh();
@@ -112,54 +123,64 @@ export function WorkoutsView({
     }
   };
 
+  const todayAttended = todaySessions[0]?.attended ?? false;
+
   return (
     <>
-      {todayLog && (
-        <section className="rounded-xl border border-[hsl(var(--border))] bg-[hsl(var(--muted))] p-4 mb-4">
-          <h2 className="text-sm font-semibold mb-2">오늘 기록</h2>
-          <dl className="grid grid-cols-2 gap-x-4 gap-y-1 text-sm mb-3">
-            <dt>출석</dt>
-            <dd>{todayLog.attended ? "O" : "X"}</dd>
-            <dt>시작</dt>
-            <dd>{todayLog.startTime ?? "—"}</dd>
-            <dt>종료</dt>
-            <dd>{todayLog.endTime ?? "—"}</dd>
-            <dt>총 시간</dt>
-            <dd>{calcDuration(todayLog.startTime, todayLog.endTime)}</dd>
-          </dl>
-          <div className="flex flex-wrap gap-2">
-            <button
-              type="button"
-              onClick={toggleTodayAttendance}
-              disabled={busy}
-              className="rounded-md border border-[hsl(var(--border))] bg-[hsl(var(--background))] px-3 py-1.5 text-sm disabled:opacity-50"
-            >
-              {todayLog.attended ? "출석 취소" : "출석 체크"}
-            </button>
-            <button
-              type="button"
-              onClick={startToday}
-              disabled={busy}
-              className="rounded-md border border-[hsl(var(--border))] bg-[hsl(var(--background))] px-3 py-1.5 text-sm disabled:opacity-50"
-            >
-              운동 시작
-            </button>
-            <button
-              type="button"
-              onClick={endToday}
-              disabled={busy || !todayLog.startTime}
-              className="rounded-md border border-[hsl(var(--border))] bg-[hsl(var(--background))] px-3 py-1.5 text-sm disabled:opacity-50"
-            >
-              운동 종료
-            </button>
-          </div>
-        </section>
-      )}
+      <section className="rounded-xl border border-[hsl(var(--border))] bg-[hsl(var(--muted))] p-4 mb-4">
+        <h2 className="text-sm font-semibold mb-2">오늘 기록</h2>
+        {todaySessions.length > 0 ? (
+          <>
+            <dl className="grid grid-cols-2 gap-x-4 gap-y-1 text-sm mb-3">
+              <dt>출석</dt>
+              <dd>{todayAttended ? "O" : "X"}</dd>
+              <dt>오늘 회차</dt>
+              <dd>{todaySessions.length}회</dd>
+            </dl>
+            <ul className="text-sm mb-3 space-y-1">
+              {todaySessions.map((s, i) => (
+                <li key={s.id}>
+                  {todaySessions.length - i}회: {s.startTime ?? "—"} ~ {s.endTime ?? "진행 중"} ({calcDuration(s.startTime, s.endTime)})
+                </li>
+              ))}
+            </ul>
+          </>
+        ) : (
+          <p className="text-sm text-[hsl(var(--muted-foreground))] mb-3">오늘 기록이 없습니다.</p>
+        )}
+        <div className="flex flex-wrap gap-2">
+          <button
+            type="button"
+            onClick={toggleTodayAttendance}
+            disabled={busy}
+            className="rounded-md border border-[hsl(var(--border))] bg-[hsl(var(--muted))] px-3 py-1.5 text-sm hover:opacity-90 disabled:opacity-50"
+          >
+            {todayAttended ? "출석 취소" : "출석 체크"}
+          </button>
+          <button
+            type="button"
+            onClick={startToday}
+            disabled={busy}
+            className="rounded-md border border-[hsl(var(--border))] bg-[hsl(var(--muted))] px-3 py-1.5 text-sm hover:opacity-90 disabled:opacity-50"
+          >
+            운동 시작
+          </button>
+          <button
+            type="button"
+            onClick={endToday}
+            disabled={busy || !hasActiveSession}
+            className="rounded-md border border-[hsl(var(--border))] bg-[hsl(var(--muted))] px-3 py-1.5 text-sm hover:opacity-90 disabled:opacity-50"
+          >
+            운동 종료
+          </button>
+        </div>
+      </section>
 
       <div className="overflow-x-auto rounded-lg border border-[hsl(var(--border))]">
         <table className="w-full text-sm">
           <thead>
             <tr className="border-b border-[hsl(var(--border))] bg-[hsl(var(--muted))]">
+              <th className="text-left p-3 font-medium">참여자</th>
               <th className="text-left p-3 font-medium">날짜</th>
               <th className="text-left p-3 font-medium">출석</th>
               <th className="text-left p-3 font-medium">시작</th>
@@ -171,9 +192,10 @@ export function WorkoutsView({
             {logs.map((row) => (
               <tr
                 key={row.id}
-                className="border-b border-[hsl(var(--border))] hover:bg-[hsl(var(--muted))] cursor-pointer"
+                className={`border-b border-[hsl(var(--border))] hover:bg-[hsl(var(--muted))] ${row.userId === currentParticipantId ? "cursor-pointer" : ""}`}
                 onClick={() => openEdit(row)}
               >
+                <td className="p-3">{row.user?.name ?? "—"}</td>
                 <td className="p-3">{row.date}</td>
                 <td className="p-3">{row.attended ? "O" : "X"}</td>
                 <td className="p-3">{row.startTime ?? "—"}</td>
@@ -186,8 +208,8 @@ export function WorkoutsView({
       </div>
 
       {editModal && (
-        <div className="fixed inset-0 z-20 flex items-center justify-center bg-black/50 p-4" role="dialog" aria-modal="true">
-          <div className="rounded-xl border bg-[hsl(var(--background))] p-4 shadow-lg max-w-sm w-full">
+        <div className="fixed inset-0 z-20 flex items-center justify-center bg-black/70 p-4" role="dialog" aria-modal="true">
+          <div className="rounded-xl border border-[hsl(var(--border))] bg-[hsl(var(--muted))] p-4 shadow-lg max-w-sm w-full">
             <h3 className="font-semibold mb-3">{editModal.date} 수정</h3>
             <div className="space-y-3">
               <label className="flex items-center gap-2">

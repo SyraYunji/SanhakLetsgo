@@ -22,6 +22,11 @@ export const paperBody = z.object({
   url: z.union([z.string().url(), z.literal("")]).optional(),
   tags: z.array(z.string()).default([]),
   readAt: z.string().regex(/^\d{4}-\d{2}-\d{2}$/, "YYYY-MM-DD 형식"),
+  mySummary: z.string().max(50000).optional(),
+});
+
+export const paperCommentBody = z.object({
+  content: z.string().min(1, "댓글을 입력하세요").max(2000),
 });
 
 export const paperReviewBody = z.object({

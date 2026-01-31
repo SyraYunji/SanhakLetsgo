@@ -13,22 +13,29 @@ export default async function WorkoutsPage() {
   const from = new Date();
   from.setDate(from.getDate() - 14);
   const fromStr = from.toISOString().slice(0, 10);
-  const [todayLog, logs] = await Promise.all([
-    prisma.workoutLog.findUnique({
-      where: { userId_date: { userId: participantId, date: today } },
-    }),
+  const [todayLogs, allLogs] = await Promise.all([
+    prisma.workoutLog.findMany({ where: { userId: participantId, date: today } }),
     prisma.workoutLog.findMany({
-      where: {
-        userId: participantId,
-        date: { gte: fromStr, lte: today },
-      },
-      orderBy: { date: "desc" },
+      where: { date: { gte: fromStr, lte: today } },
+      include: { user: { select: { name: true } } },
     }),
   ]);
+  const todaySessions = todayLogs.sort(
+    (a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
+  );
+  const logs = allLogs.sort(
+    (a, b) =>
+      b.date.localeCompare(a.date) ||
+      new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
+  );
   return (
     <div className="space-y-4">
-      <h1 className="text-lg font-semibold">운동 기록</h1>
-      <WorkoutsView todayLog={todayLog} logs={logs} />
+      <h1 className="text-lg font-semibold">운동 기록 (모든 참여자)</h1>
+      <WorkoutsView
+        currentParticipantId={participantId}
+        todaySessions={todaySessions}
+        logs={logs}
+      />
     </div>
   );
 }

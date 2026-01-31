@@ -10,11 +10,11 @@ function todayStr() {
 export async function POST(req: Request) {
   const participantId = await getParticipantId();
   if (!participantId) {
-    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    return NextResponse.json({ error: "참여자를 선택해 주세요." }, { status: 401 });
   }
   try {
-    const body = await req.json();
-    const parsed = workoutStartBody.safeParse(body);
+    const body = await req.json().catch(() => ({}));
+    const parsed = workoutStartBody.safeParse({ ...body, date: body?.date ?? todayStr() });
     if (!parsed.success) {
       return NextResponse.json(
         { error: parsed.error.flatten().fieldErrors },
@@ -28,21 +28,10 @@ export async function POST(req: Request) {
         { status: 400 }
       );
     }
-    const existing = await prisma.workoutLog.findUnique({
-      where: { userId_date: { userId: participantId, date } },
-    });
-    if (existing?.startTime) {
-      return NextResponse.json(
-        { error: "already_started", startTime: existing.startTime },
-        { status: 409 }
-      );
-    }
     const now = new Date();
     const startTime = `${String(now.getHours()).padStart(2, "0")}:${String(now.getMinutes()).padStart(2, "0")}`;
-    const log = await prisma.workoutLog.upsert({
-      where: { userId_date: { userId: participantId, date } },
-      create: { userId: participantId, date, attended: true, startTime },
-      update: { startTime, attended: true },
+    const log = await prisma.workoutLog.create({
+      data: { userId: participantId, date, attended: true, startTime },
     });
     return NextResponse.json(log);
   } catch (e) {

@@ -3,12 +3,14 @@
 import { useRouter } from "next/navigation";
 import { useState } from "react";
 
-export function PaperAddForm({ onDone }: { onDone: () => void }) {
+export function PaperAddForm({ onDone }: { onDone?: () => void } = {}) {
   const router = useRouter();
   const [title, setTitle] = useState("");
   const [url, setUrl] = useState("");
   const [tagsStr, setTagsStr] = useState("");
   const [readAt, setReadAt] = useState(() => new Date().toISOString().slice(0, 10));
+  const [mySummary, setMySummary] = useState("");
+  const [pdfFile, setPdfFile] = useState<File | null>(null);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<Record<string, string[]>>({});
 
@@ -17,24 +19,50 @@ export function PaperAddForm({ onDone }: { onDone: () => void }) {
     setError({});
     setBusy(true);
     try {
-      const res = await fetch("/api/papers", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          title: title.trim(),
-          url: url.trim() || undefined,
-          tags: tagsStr.split(",").map((t) => t.trim()).filter(Boolean),
-          readAt,
-        }),
-      });
-      const data = await res.json();
-      if (!res.ok) {
-        setError(data.error ?? { _: ["등록 실패"] });
-        return;
+      const hasFile = pdfFile && pdfFile.size > 0;
+      if (hasFile) {
+        const formData = new FormData();
+        formData.set("title", title.trim());
+        if (url.trim()) formData.set("url", url.trim());
+        formData.set("tags", tagsStr);
+        formData.set("readAt", readAt);
+        if (mySummary.trim()) formData.set("mySummary", mySummary.trim());
+        formData.set("pdf", pdfFile);
+        const res = await fetch("/api/papers", {
+          method: "POST",
+          credentials: "include",
+          body: formData,
+        });
+        const data = await res.json();
+        if (!res.ok) {
+          setError(data.error ?? { _: ["등록 실패"] });
+          return;
+        }
+        router.push(`/papers/${data.id}`);
+        router.refresh();
+        onDone?.();
+      } else {
+        const res = await fetch("/api/papers", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          credentials: "include",
+          body: JSON.stringify({
+            title: title.trim(),
+            url: url.trim() || undefined,
+            tags: tagsStr.split(",").map((t) => t.trim()).filter(Boolean),
+            readAt,
+            mySummary: mySummary.trim() || undefined,
+          }),
+        });
+        const data = await res.json();
+        if (!res.ok) {
+          setError(data.error ?? { _: ["등록 실패"] });
+          return;
+        }
+        router.push(`/papers/${data.id}`);
+        router.refresh();
+        onDone?.();
       }
-      router.push(`/papers/${data.id}`);
-      router.refresh();
-      onDone();
     } finally {
       setBusy(false);
     }
@@ -45,15 +73,36 @@ export function PaperAddForm({ onDone }: { onDone: () => void }) {
       <h2 className="text-base font-semibold mb-3">논문 추가</h2>
       <form onSubmit={handleSubmit} className="space-y-3">
         <div>
-          <label className="block text-sm font-medium mb-1">제목 *</label>
+          <label className="block text-sm font-medium mb-1">논문 제목 *</label>
           <input
             type="text"
             value={title}
             onChange={(e) => setTitle(e.target.value)}
             required
+            placeholder="논문 제목을 입력하세요"
             className="w-full rounded-md border border-[hsl(var(--border))] bg-[hsl(var(--background))] px-3 py-2 text-sm"
           />
           {error.title?.[0] && <p className="text-xs text-red-600 mt-1">{error.title[0]}</p>}
+        </div>
+        <div>
+          <label className="block text-sm font-medium mb-1">논문 PDF</label>
+          <input
+            type="file"
+            accept=".pdf,application/pdf"
+            onChange={(e) => setPdfFile(e.target.files?.[0] ?? null)}
+            className="w-full rounded-md border border-[hsl(var(--border))] bg-[hsl(var(--background))] px-3 py-2 text-sm file:mr-2 file:rounded file:border-0 file:bg-[hsl(var(--primary))] file:px-3 file:py-1 file:text-sm file:text-[hsl(var(--primary-foreground))]"
+          />
+          <p className="text-xs text-[hsl(var(--muted-foreground))] mt-1">PDF 파일을 올리면 저장 시 함께 저장됩니다.</p>
+        </div>
+        <div>
+          <label className="block text-sm font-medium mb-1">나만의 정리</label>
+          <textarea
+            value={mySummary}
+            onChange={(e) => setMySummary(e.target.value)}
+            rows={6}
+            placeholder="논문 요약, 핵심 내용, 메모 등을 자유롭게 적어주세요"
+            className="w-full rounded-md border border-[hsl(var(--border))] bg-[hsl(var(--background))] px-3 py-2 text-sm"
+          />
         </div>
         <div>
           <label className="block text-sm font-medium mb-1">링크 (arXiv/DOI/URL)</label>
@@ -90,7 +139,7 @@ export function PaperAddForm({ onDone }: { onDone: () => void }) {
             disabled={busy}
             className="rounded-md bg-[hsl(var(--primary))] text-[hsl(var(--primary-foreground))] px-3 py-1.5 text-sm font-medium disabled:opacity-50"
           >
-            추가
+            저장
           </button>
           <button
             type="button"

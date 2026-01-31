@@ -9,12 +9,16 @@ export async function GET(
 ) {
   const participantId = await getParticipantId();
   if (!participantId) {
-    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    return NextResponse.json({ error: "참여자를 선택해 주세요." }, { status: 401 });
   }
   const { id } = await params;
-  const paper = await prisma.paper.findFirst({
-    where: { id, userId: participantId },
-    include: { review: true },
+  const paper = await prisma.paper.findUnique({
+    where: { id },
+    include: {
+      review: true,
+      user: { select: { name: true } },
+      comments: { include: { user: { select: { name: true } } }, orderBy: { createdAt: "asc" } },
+    },
   });
   if (!paper) {
     return NextResponse.json({ error: "Not found" }, { status: 404 });
@@ -28,7 +32,7 @@ export async function PATCH(
 ) {
   const participantId = await getParticipantId();
   if (!participantId) {
-    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    return NextResponse.json({ error: "참여자를 선택해 주세요." }, { status: 401 });
   }
   const { id } = await params;
   try {
@@ -68,7 +72,7 @@ export async function DELETE(
 ) {
   const participantId = await getParticipantId();
   if (!participantId) {
-    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    return NextResponse.json({ error: "참여자를 선택해 주세요." }, { status: 401 });
   }
   const { id } = await params;
   const paper = await prisma.paper.findFirst({

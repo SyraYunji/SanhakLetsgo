@@ -26,22 +26,23 @@ export default async function DashboardPage() {
   const userId = participantId;
   const today = todayStr();
   const { start: weekStart, end: weekEnd } = getWeekRange();
-  const [todayLog, weekPapersCount] = await Promise.all([
-    prisma.workoutLog.findUnique({
-      where: { userId_date: { userId, date: today } },
-    }),
-    prisma.paper.count({
-      where: {
-        userId,
-        readAt: { gte: weekStart, lte: weekEnd },
-      },
-    }),
-  ]);
+  const todayLogs = await prisma.workoutLog.findMany({
+    where: { userId, date: today },
+  });
+  const todaySessions = todayLogs.sort(
+    (a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
+  );
+  const weekPapersCount = await prisma.paper.count({
+    where: {
+      userId,
+      readAt: { gte: weekStart, lte: weekEnd },
+    },
+  });
   return (
     <div className="space-y-4">
       <h1 className="text-lg font-semibold sr-only">대시보드</h1>
       <DashboardCards
-        todayLog={todayLog}
+        todaySessions={todaySessions}
         weekPapersCount={weekPapersCount}
       />
     </div>

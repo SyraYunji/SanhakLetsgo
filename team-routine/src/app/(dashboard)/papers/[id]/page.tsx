@@ -12,9 +12,13 @@ export default async function PaperDetailPage({
   const participantId = await getParticipantId();
   if (!participantId) return null;
   const { id } = await params;
-  const paper = await prisma.paper.findFirst({
-    where: { id, userId: participantId },
-    include: { review: true },
+  const paper = await prisma.paper.findUnique({
+    where: { id },
+    include: {
+      review: true,
+      user: { select: { name: true } },
+      comments: { include: { user: { select: { name: true } } }, orderBy: { createdAt: "asc" } },
+    },
   });
   if (!paper) notFound();
   return (
