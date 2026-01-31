@@ -1,0 +1,9 @@
+{
+  "/page": "app/page.js",
+  "/api/workouts/start/route": "app/api/workouts/start/route.js",
+  "/api/workouts/attendance/route": "app/api/workouts/attendance/route.js",
+  "/api/workouts/end/route": "app/api/workouts/end/route.js",
+  "/(dashboard)/dashboard/page": "app/(dashboard)/dashboard/page.js",
+  "/(dashboard)/workouts/page": "app/(dashboard)/workouts/page.js",
+  "/(dashboard)/papers/page": "app/(dashboard)/papers/page.js"
+}
