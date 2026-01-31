@@ -21,12 +21,12 @@ export default async function WorkoutsPage() {
     }),
   ]);
   const todaySessions = todayLogs.sort(
-    (a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
+    (a, b) => (b.createdAt ? new Date(b.createdAt).getTime() : 0) - (a.createdAt ? new Date(a.createdAt).getTime() : 0)
   );
   const logs = allLogs.sort(
     (a, b) =>
       b.date.localeCompare(a.date) ||
-      new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
+      (b.createdAt ? new Date(b.createdAt).getTime() : 0) - (a.createdAt ? new Date(a.createdAt).getTime() : 0)
   );
   return (
     <div className="space-y-4">

@@ -30,7 +30,7 @@ export default async function DashboardPage() {
     where: { userId, date: today },
   });
   const todaySessions = todayLogs.sort(
-    (a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
+    (a, b) => (b.createdAt ? new Date(b.createdAt).getTime() : 0) - (a.createdAt ? new Date(a.createdAt).getTime() : 0)
   );
   const weekPapersCount = await prisma.paper.count({
     where: {

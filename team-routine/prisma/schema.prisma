@@ -66,7 +66,7 @@ model WorkoutLog {
   attended  Boolean  @default(false)
   startTime String?  @map("start_time")
   endTime   String?  @map("end_time")
-  createdAt DateTime @default(now()) @map("created_at")
+  createdAt DateTime? @default(now()) @map("created_at")
 
   user User @relation(fields: [userId], references: [id], onDelete: Cascade)
 

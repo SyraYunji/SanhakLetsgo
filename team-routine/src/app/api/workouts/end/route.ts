@@ -37,7 +37,7 @@ export async function POST(req: Request) {
       },
     });
     const active = candidates.sort(
-      (a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
+      (a, b) => (b.createdAt ? new Date(b.createdAt).getTime() : 0) - (a.createdAt ? new Date(a.createdAt).getTime() : 0)
     )[0];
     if (!active?.startTime) {
       return NextResponse.json(
